@@ -822,13 +822,31 @@
                     <button onclick="executeCancel()" class="flex-1 bg-red-600 text-white font-medium rounded-lg px-4 py-2.5 text-xs sm:text-sm hover:bg-red-700 transition shadow-sm min-h-[44px] active:scale-[0.98]">確認取消</button>
                 `;
             } else if (mode === 'booking_success_new') {
+                const eventTitle = encodeURIComponent("陽交校園診所 - 耳鼻喉科看診 (王大明 醫師)");
+                const eventDetails = encodeURIComponent("您的預約號碼為 15 號。\n請隨時注意線上叫號進度，並提前至現場候診。");
+                const eventLocation = encodeURIComponent("陽交校園診所 陽明校區");
+                const eventDates = "20260520T010000Z/20260520T040000Z"; 
+                const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}&location=${eventLocation}`;
+
                 footer.innerHTML = `
-                    <button onclick="closeMessage()" class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg py-2 hover:bg-slate-50 transition min-h-[44px] text-xs sm:text-sm">稍後再說</button>
-                    <button onclick="openNewPatientForm()" class="flex-[1.5] bg-clinic-600 text-white font-medium rounded-lg py-2 hover:bg-clinic-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm">填寫初診資料</button>
+                    <a href="${calUrl}" target="_blank" onclick="closeMessage()" class="px-3 sm:px-4 bg-clinic-50 text-clinic-600 border border-clinic-200 font-medium rounded-lg py-2 hover:bg-clinic-100 transition flex items-center justify-center min-h-[44px] active:scale-[0.98] shrink-0" title="加入行事曆">
+                        <i class="ph ph-calendar-plus text-xl"></i>
+                    </a>
+                    <button onclick="closeMessage()" class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg py-2 hover:bg-slate-50 transition min-h-[44px] text-xs sm:text-sm active:scale-[0.98]">確定</button>
+                    <button onclick="openNewPatientForm()" class="flex-[1.5] bg-clinic-600 text-white font-medium rounded-lg py-2 hover:bg-clinic-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm active:scale-[0.98]">填寫初診資料</button>
                 `;
             } else if (mode === 'booking_success_return') {
+                const eventTitle = encodeURIComponent("陽交校園診所 - 耳鼻喉科看診 (王大明 醫師)");
+                const eventDetails = encodeURIComponent("您的預約號碼為 15 號。\n請隨時注意線上叫號進度，並提前至現場候診。");
+                const eventLocation = encodeURIComponent("陽交校園診所 陽明校區");
+                const eventDates = "20260520T010000Z/20260520T040000Z"; 
+                const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}&location=${eventLocation}`;
+
                 footer.innerHTML = `
-                    <button onclick="closeMessage()" class="flex-1 bg-slate-800 text-white font-medium rounded-lg py-2 hover:bg-slate-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm">確定</button>
+                    <a href="${calUrl}" target="_blank" onclick="closeMessage()" class="flex-1 bg-clinic-50 text-clinic-600 border border-clinic-200 font-medium rounded-lg py-2 hover:bg-clinic-100 transition flex items-center justify-center gap-1 min-h-[44px] text-xs sm:text-sm active:scale-[0.98]">
+                        <i class="ph ph-calendar-plus text-lg"></i> 加入行事曆
+                    </a>
+                    <button onclick="closeMessage()" class="flex-1 bg-slate-800 text-white font-medium rounded-lg py-2 hover:bg-slate-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm active:scale-[0.98]">確定</button>
                 `;
             } else {
                 footer.innerHTML = `<button onclick="closeMessage()" class="w-full bg-slate-800 text-white font-medium rounded-lg px-6 py-2.5 text-sm hover:bg-slate-700 transition shadow-sm min-h-[44px]">確定</button>`;
