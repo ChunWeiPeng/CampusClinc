@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>校園診所線上掛號系統 V2</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入 Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        clinic: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6', // Teal main
+                            600: '#0d9488',
+                            700: '#0f766e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #14b8a6;
+            color: #0f766e;
+            font-weight: 600;
+        }
+
+        .tab-inactive {
+            color: #64748b;
+        }
+
+        .tab-inactive:hover {
+            color: #334155;
+            background-color: #f1f5f9;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <img src="https://newstudents.nycu.edu.tw/wp-content/uploads/2021/09/cropped-NYCU_logo.png"
+                    alt="陽交校園診所Logo" class="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                    onerror="this.onerror=null; this.src='https://placehold.co/40x40/14b8a6/white?text=Logo'">
+                <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">陽交校園診所</h1>
+            </div>
+            <button
+                class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-300 transition shrink-0">
+                <i class="ph ph-user"></i>
+            </button>
+        </div>
+
+        <!-- 功能分頁 Tabs -->
+        <div class="max-w-5xl mx-auto px-2 sm:px-4 flex border-b border-slate-200 overflow-x-auto hide-scrollbar">
+            <button onclick="switchTab('booking')" id="tab-booking"
+                class="tab-active px-3 sm:px-4 py-3 whitespace-nowrap flex items-center gap-1.5 transition-colors duration-200 text-sm sm:text-base flex-1 md:flex-initial justify-center">
+                <i class="ph ph-calendar-plus text-lg shrink-0"></i> 掛號預約
+            </button>
+            <button onclick="switchTab('query')" id="tab-query"
+                class="tab-inactive px-3 sm:px-4 py-3 whitespace-nowrap flex items-center gap-1.5 rounded-t-lg transition-colors duration-200 text-sm sm:text-base flex-1 md:flex-initial justify-center">
+                <i class="ph ph-magnifying-glass text-lg shrink-0"></i> 查詢 / 取消
+            </button>
+            <button onclick="switchTab('progress')" id="tab-progress"
+                class="tab-inactive px-3 sm:px-4 py-3 whitespace-nowrap flex items-center gap-1.5 rounded-t-lg transition-colors duration-200 text-sm sm:text-base flex-1 md:flex-initial justify-center">
+                <i class="ph ph-activity text-lg shrink-0"></i> 看診進度
+            </button>
+        </div>
+    </header>
+
+    <!-- 主內容區 -->
+    <main class="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+
+        <!-- ==================== 區塊 1：掛號預約 (逐步流程) ==================== -->
+        <section id="sec-booking" class="block animate-fade-in space-y-4">
+
+            <!-- 步驟一：選擇校區與科別 -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-clinic-500"></div>
+                <h2 class="text-sm sm:text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span
+                        class="bg-clinic-100 text-clinic-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">1</span>
+                    選擇看診資訊
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pl-8">
+                    <div>
+                        <label class="block text-xs sm:text-sm text-slate-500 mb-1">校區</label>
+                        <select id="stepCampus" onchange="resetAndRenderCalendar()"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 focus:ring-1 focus:ring-clinic-500 transition min-h-[44px]">
+                            <option value="陽明校區">陽明校區</option>
+                            <option value="光復校區">光復校區</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm text-slate-500 mb-1">掛號科別</label>
+                        <select id="stepDept" onchange="resetAndRenderCalendar()"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 focus:ring-1 focus:ring-clinic-500 transition min-h-[44px]">
+                            <option value="耳鼻喉科">耳鼻喉科</option>
+                            <option value="一般外科">一般外科</option>
+                            <option value="神經內科">神經內科</option>
+                            <option value="婦產科">婦產科</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟二：行事曆選擇日期 -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-clinic-500"></div>
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
+                    <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                        <span
+                            class="bg-clinic-100 text-clinic-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">2</span>
+                        選擇看診日期
+                    </h2>
+
+                    <!-- 圖例說明 -->
+                    <div
+                        class="flex flex-wrap gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100">
+                        <div class="flex items-center gap-1.5"><span
+                                class="w-3 h-3 rounded bg-clinic-50 border border-clinic-300 relative"><span
+                                    class="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-clinic-400"></span></span>有門診
+                        </div>
+                        <div class="flex items-center gap-1.5"><span
+                                class="w-3 h-3 rounded bg-slate-50 border border-slate-200"></span>休診</div>
+                        <div class="flex items-center gap-1.5"><span
+                                class="text-red-500 font-bold bg-red-50 px-1 rounded">紅字</span>校定/國定假日</div>
+                    </div>
+                </div>
+
+                <div class="pl-0 sm:pl-8">
+                    <!-- 行事曆控制列 -->
+                    <div
+                        class="flex items-center justify-between mb-3 bg-slate-50 rounded-lg p-2 border border-slate-100">
+                        <button onclick="changeMonth(-1)"
+                            class="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-200 rounded-md transition"><i
+                                class="ph ph-caret-left text-lg"></i></button>
+                        <span id="calendarMonthLabel" class="font-bold text-slate-700 text-sm sm:text-base">2026 年 5
+                            月</span>
+                        <button onclick="changeMonth(1)"
+                            class="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-200 rounded-md transition"><i
+                                class="ph ph-caret-right text-lg"></i></button>
+                    </div>
+
+                    <!-- 行事曆 Grid -->
+                    <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-medium text-slate-400 mb-2">
+                        <div>日</div>
+                        <div>一</div>
+                        <div>二</div>
+                        <div>三</div>
+                        <div>四</div>
+                        <div>五</div>
+                        <div>六</div>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 text-sm">
+                        <!-- JS 動態生成日期 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 國定假日提醒橫幅 (預設隱藏) -->
+            <div id="holidayWarning"
+                class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-sm flex items-start gap-3 animate-fade-in">
+                <i class="ph ph-warning-circle text-xl shrink-0 mt-0.5"></i>
+                <div class="text-sm">
+                    <h4 class="font-bold">國定/校定假日提醒：<span id="holidayNameDisplay"></span></h4>
+                    <p class="text-red-600 mt-1 leading-relaxed text-xs sm:text-sm">
+                        本日為休假日，門診時間可能有所調整或部分科別休診，請仔細確認下方各醫師實際開診狀況。</p>
+                </div>
+            </div>
+
+            <!-- 步驟三：選擇門診時段 (點選日期後才顯示) -->
+            <div id="slotsContainer"
+                class="hidden bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden animate-fade-in">
+                <div class="absolute top-0 left-0 w-1 h-full bg-clinic-500"></div>
+                <h2 class="text-sm sm:text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span
+                        class="bg-clinic-100 text-clinic-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">3</span>
+                    選擇門診時段 <span id="selectedDateDisplay"
+                        class="text-xs sm:text-sm font-normal text-clinic-600 bg-clinic-50 px-2 py-0.5 rounded-md ml-2 border border-clinic-100"></span>
+                </h2>
+
+                <div
+                    class="pl-0 sm:pl-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                    <!-- 上午時段 -->
+                    <div class="flex flex-col">
+                        <div
+                            class="bg-slate-50/80 border-b border-slate-150 p-2.5 text-center flex items-center justify-center gap-1.5 font-bold text-slate-600 text-xs sm:text-sm">
+                            <i class="ph ph-sun text-yellow-500 text-base"></i>
+                            <span>上午 (09:00 - 12:00)</span>
+                        </div>
+                        <div class="p-3 sm:p-4 bg-white" id="slotMorning">
+                            <!-- JS 動態插入醫師卡片 -->
+                        </div>
+                    </div>
+
+                    <!-- 下午時段 -->
+                    <div class="flex flex-col">
+                        <div
+                            class="bg-slate-50/80 border-b border-slate-150 p-2.5 text-center flex items-center justify-center gap-1.5 font-bold text-slate-600 text-xs sm:text-sm">
+                            <i class="ph ph-cloud-sun text-orange-400 text-base"></i>
+                            <span>下午 (13:30 - 16:30)</span>
+                        </div>
+                        <div class="p-3 sm:p-4 bg-white" id="slotAfternoon">
+                            <!-- JS 動態插入醫師卡片 -->
+                        </div>
+                    </div>
+
+                    <!-- 晚上時段 -->
+                    <div class="flex flex-col">
+                        <div
+                            class="bg-slate-50/80 border-b border-slate-150 p-2.5 text-center flex items-center justify-center gap-1.5 font-bold text-slate-600 text-xs sm:text-sm">
+                            <i class="ph ph-moon text-indigo-500 text-base"></i>
+                            <span>晚上 (18:00 - 21:00)</span>
+                        </div>
+                        <div class="p-3 sm:p-4 bg-white" id="slotEvening">
+                            <div class="border border-slate-200 bg-slate-50 rounded-xl p-4 opacity-75 text-center">
+                                <div class="font-bold text-slate-500 text-sm">今日無夜間門診</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 區塊 2：查詢 / 取消掛號 ==================== -->
+        <section id="sec-query" class="hidden animate-fade-in">
+            <!-- 內容與先前版本相同，維持精簡防呆 -->
+            <div class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-200 p-4 text-center">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800">查詢掛號紀錄</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">輸入您的基本資料，可供修改預約或進行取消</p>
+                </div>
+
+                <div class="p-4 sm:p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">身分證字號 / 居留證號</label>
+                        <input type="text" placeholder="例如：A123456789"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 focus:ring-1 focus:ring-clinic-500 min-h-[44px]">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">出生年月日 (西元)</label>
+                        <input type="date"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 focus:ring-1 focus:ring-clinic-500 min-h-[44px]">
+                    </div>
+
+                    <button onclick="mockQuery()"
+                        class="w-full bg-slate-800 text-white font-medium rounded-lg py-2.5 text-sm sm:text-base hover:bg-slate-700 transition shadow-sm mt-2 active:scale-[0.99] min-h-[44px]">
+                        送出查詢
+                    </button>
+                </div>
+
+                <!-- 查詢結果區 -->
+                <div id="queryResult" class="hidden border-t border-slate-100 bg-slate-50 p-4 sm:p-6">
+                    <h3 class="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">即將到來的預約</h3>
+
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span
+                                    class="bg-clinic-100 text-clinic-700 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded">陽明校區</span>
+                                <span
+                                    class="bg-slate-100 text-slate-600 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded">耳鼻喉科</span>
+                            </div>
+                            <div class="text-lg sm:text-xl font-black text-slate-800">14 號</div>
+                        </div>
+                        <h4 class="font-bold text-base sm:text-lg text-slate-800">王大明 醫師</h4>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1.5 flex items-center gap-1.5">
+                            <i class="ph ph-calendar-blank text-base"></i>
+                            <span>2026/05/20 (三) 上午 09:00 - 12:00</span>
+                        </p>
+
+                        <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                            <button onclick="cancelAppointment()"
+                                class="w-full sm:flex-1 bg-red-50 text-red-600 border border-red-200 font-medium rounded-lg py-2.5 text-xs sm:text-sm hover:bg-red-100 transition min-h-[40px] active:scale-[0.98]">
+                                取消掛號
+                            </button>
+                            <a href="#"
+                                class="w-full sm:flex-1 bg-clinic-50 text-clinic-600 border border-clinic-200 font-medium rounded-lg py-2.5 text-xs sm:text-sm hover:bg-clinic-100 transition flex items-center justify-center gap-1 min-h-[40px] active:scale-[0.98]">
+                                <i class="ph ph-calendar-plus text-base"></i> 加入行事曆
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 區塊 3：即時看診進度 ==================== -->
+        <section id="sec-progress" class="hidden animate-fade-in">
+            <!-- 收合式篩選器 -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
+                <button onclick="toggleProgressFilter()"
+                    class="w-full p-4 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50/80 transition text-left">
+                    <div class="flex items-center gap-2.5">
+                        <div
+                            class="w-8 h-8 rounded-lg bg-clinic-50 flex items-center justify-center text-clinic-600 shrink-0">
+                            <i class="ph ph-sliders text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-xs sm:text-sm text-slate-700">更換診間與科別</span>
+                            <p id="progressFilterSummary" class="text-xs text-slate-500 mt-0.5">陽明校區 · 耳鼻喉科 · 第一診</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium shrink-0">
+                        <span class="hidden sm:inline" id="progressFilterStatusText">展開設定</span>
+                        <i id="progressFilterChevron"
+                            class="ph ph-caret-down text-slate-500 text-lg transition-transform duration-200"></i>
+                    </div>
+                </button>
+
+                <div id="progressFilterContent"
+                    class="hidden grid-cols-1 sm:grid-cols-3 gap-3 p-4 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">校區</label>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none min-h-[40px]">
+                            <option>陽明校區</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">科別</label>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none min-h-[40px]">
+                            <option>耳鼻喉科</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">診間 / 醫師</label>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none min-h-[40px]">
+                            <option>第一診 - 王大明 醫師</option>
+                            <option>第二診 - 李小梅 醫師</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 看診進度大卡片 -->
+            <div
+                class="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden text-center relative animate-fade-in">
+                <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-clinic-50 to-white"></div>
+                <div class="relative p-6 pt-8">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-1">第一診 - 王大明 醫師</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 flex items-center justify-center gap-1.5 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        目前看診中 (上午診)
+                    </p>
+
+                    <div class="mb-6">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">目前看診號碼</p>
+                        <div
+                            class="relative inline-flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-clinic-500 text-white shadow-lg shadow-clinic-500/30">
+                            <span class="text-5xl sm:text-6xl font-black">12</span>
+                            <span
+                                class="absolute -bottom-2 sm:-bottom-3 bg-white text-clinic-600 text-[10px] sm:text-xs font-bold px-3 py-0.5 rounded-full border border-clinic-100 shadow-sm">順號</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="grid grid-cols-2 gap-3 max-w-sm mx-auto bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-100">
+                        <div>
+                            <p class="text-[10px] sm:text-xs text-slate-500 mb-0.5">即將到號 (下1位)</p>
+                            <div class="flex items-center justify-center gap-1">
+                                <p class="text-xl sm:text-2xl font-bold text-slate-700">8</p>
+                                <span
+                                    class="bg-orange-100 text-orange-600 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">過號</span>
+                            </div>
+                        </div>
+                        <div class="border-l border-slate-200">
+                            <p class="text-[10px] sm:text-xs text-slate-500 mb-0.5">準備中 (下2位)</p>
+                            <div class="flex items-center justify-center gap-1">
+                                <p class="text-xl sm:text-2xl font-bold text-slate-700">13</p>
+                                <span
+                                    class="bg-slate-200 text-slate-600 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">順號</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== 掛號表單 Modal ==================== -->
+    <div id="bookingModal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[88vh]">
+            <!-- Modal Header -->
+            <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-10">
+                <div class="pr-4">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800" id="modalTitle">掛號資料填寫</h2>
+                    <p class="text-xs text-clinic-600 font-semibold mt-0.5" id="modalSubtitle">--</p>
+                </div>
+                <button onclick="closeBookingModal()"
+                    class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-300 transition shrink-0">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-4 sm:p-6 overflow-y-auto hide-scrollbar space-y-4">
+                <div class="flex p-1 bg-slate-100 rounded-lg">
+                    <button onclick="togglePatientType('new')" id="btn-type-new"
+                        class="flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md shadow-sm bg-white text-slate-800 transition min-h-[36px]">初診
+                        (首次看診)</button>
+                    <button onclick="togglePatientType('return')" id="btn-type-return"
+                        class="flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 transition min-h-[36px]">複診
+                        (曾看過診)</button>
+                </div>
+
+                <div id="newPatientBanner"
+                    class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2.5 items-start">
+                    <i class="ph ph-lightbulb text-blue-500 text-xl shrink-0 mt-0.5"></i>
+                    <div class="text-xs">
+                        <h4 class="font-bold text-blue-800">加速看診小撇步</h4>
+                        <p class="text-blue-600 mt-0.5 leading-relaxed">掛號成功後，強烈建議您預先填寫「線上初診資料表」，可節省現場排隊填寫與行政處理時間！</p>
+                    </div>
+                </div>
+
+                <form id="bookingForm" class="space-y-3.5" onsubmit="event.preventDefault(); submitBooking();">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">身分證字號 / 居留證號 <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" required placeholder="A123456789"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 min-h-[40px]">
+                    </div>
+
+                    <div id="newPatientFields" class="space-y-3.5">
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">真實姓名 <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" placeholder="王小明"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 min-h-[40px]">
+                        </div>
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">手機號碼 <span
+                                    class="text-red-500">*</span></label>
+                            <input type="tel" placeholder="0912345678"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 min-h-[40px]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">出生年月日 (西元) <span
+                                class="text-red-500">*</span></label>
+                        <input type="date" required
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 min-h-[40px]">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">驗證碼 <span
+                                class="text-red-500">*</span></label>
+                        <div class="flex gap-2">
+                            <input type="text" required placeholder="輸入文字"
+                                class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-clinic-500 min-h-[40px] min-w-0">
+                            <div
+                                class="bg-slate-200 w-20 sm:w-24 rounded-lg flex items-center justify-center font-mono font-bold tracking-widest text-slate-600 select-none relative overflow-hidden shrink-0">
+                                <span class="relative z-10 text-base sm:text-lg"
+                                    style="transform: rotate(-5deg);">3A8F</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 border-t border-slate-200 p-4 flex gap-3 sticky bottom-0 z-10">
+                <button onclick="closeBookingModal()"
+                    class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg py-2.5 text-sm hover:bg-slate-50 transition min-h-[44px] active:scale-[0.98]">取消</button>
+                <button type="button" onclick="submitBooking()"
+                    class="flex-1 bg-clinic-600 text-white font-medium rounded-lg py-2.5 text-sm hover:bg-clinic-700 transition shadow-sm min-h-[44px] active:scale-[0.98]">確認掛號</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 初診資料表 Modal ==================== -->
+    <div id="newPatientFormModal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-3">
+        <!-- (同上版，略過部分以保持簡潔，保留結構) -->
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-clinic-600 p-4 flex justify-between items-center sticky top-0 z-10">
+                <div class="pr-4 text-white">
+                    <h2 class="text-base sm:text-lg font-bold">初診病患基本資料表</h2>
+                </div>
+                <button onclick="closeNewPatientForm(false)"
+                    class="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition shrink-0">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto hide-scrollbar space-y-6">
+                <div class="text-sm text-slate-500 text-center py-10">
+                    (初診病歷表單內容...略)
+                </div>
+            </div>
+            <div class="bg-slate-50 border-t border-slate-200 p-4 flex gap-3 sticky bottom-0 z-10">
+                <button onclick="closeNewPatientForm(false)"
+                    class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg py-2.5 text-sm hover:bg-slate-50 transition">稍後現場填</button>
+                <button onclick="closeNewPatientForm(true)"
+                    class="flex-1 bg-clinic-600 text-white font-medium rounded-lg py-2.5 text-sm hover:bg-clinic-700 transition shadow-sm">確認送出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示訊息 Modal -->
+    <div id="messageModal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden transform scale-95 transition-transform duration-300"
+            id="messageModalContent">
+            <div class="p-5 sm:p-6 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3"
+                    id="messageIconBg">
+                    <i class="ph ph-check text-2xl text-green-600" id="messageIcon"></i>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1" id="messageTitle">成功</h3>
+                <p class="text-xs sm:text-sm text-slate-500 whitespace-pre-line leading-relaxed" id="messageText">
+                    操作已成功完成。</p>
+            </div>
+            <div class="bg-slate-50 px-4 py-3 sm:py-4 flex gap-2 justify-center border-t border-slate-100"
+                id="messageFooter">
+                <!-- JS 動態按鈕 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 狀態管理 ---
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth(); // 0-based
+        let selectedDateString = null;
+        let currentPatientType = 'new';
+
+        // 國定假日/校定假日對照表 (格式 MM/DD)
+        const mockHolidays = {
+            "01/01": "元旦",
+            "02/28": "和平紀念日",
+            "04/04": "兒童節",
+            "04/05": "清明節",
+            "05/01": "勞動節",
+            "05/18": "校慶補假",
+            "06/19": "端午節",
+            "09/25": "中秋節",
+            "10/10": "國慶日"
+        };
+
+        // 模擬：各科別有門診的日期 (以當前月份為基準隨機產生，確保看得到效果)
+        function getMockAvailableDates(dept) {
+            const dates = [];
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            // 隨機塞幾天當作有門診
+            for (let i = 1; i <= daysInMonth; i++) {
+                if (dept === '耳鼻喉科' && (i % 2 !== 0 && i % 7 !== 0)) dates.push(i);
+                if (dept === '一般外科' && (i % 3 === 0)) dates.push(i);
+                if (dept === '神經內科' && (i === 5 || i === 12 || i === 19 || i === 26)) dates.push(i);
+                if (dept === '婦產科' && (i % 4 === 0)) dates.push(i);
+            }
+            return dates;
+        }
+
+        // --- 頁籤切換邏輯 ---
+        function switchTab(tabName) {
+            ['booking', 'query', 'progress'].forEach(name => {
+                document.getElementById(`sec-${name}`).classList.add('hidden');
+                document.getElementById(`tab-${name}`).classList.replace('tab-active', 'tab-inactive');
+            });
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.replace('tab-inactive', 'tab-active');
+        }
+
+        // --- 行事曆邏輯 ---
+        function changeMonth(offset) {
+            currentMonth += offset;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            resetAndRenderCalendar();
+        }
+
+        function resetAndRenderCalendar() {
+            // 切換條件時，重置選擇狀態與隱藏時段區塊
+            selectedDateString = null;
+            document.getElementById('slotsContainer').classList.add('hidden');
+            const holidayWarning = document.getElementById('holidayWarning');
+            if (holidayWarning) holidayWarning.classList.add('hidden');
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const monthLabel = document.getElementById('calendarMonthLabel');
+            const grid = document.getElementById('calendarGrid');
+            const dept = document.getElementById('stepDept').value;
+
+            monthLabel.textContent = `${currentYear} 年 ${currentMonth + 1} 月`;
+            grid.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0-6
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const availableDates = getMockAvailableDates(dept);
+
+            // 填補月初的空白
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="aspect-square"></div>`;
+            }
+
+            // 產生每一天
+            for (let day = 1; day <= daysInMonth; day++) {
+                const monthStr = String(currentMonth + 1).padStart(2, '0');
+                const dayStr = String(day).padStart(2, '0');
+                const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+                const holidayKey = `${monthStr}/${dayStr}`;
+                const holidayName = mockHolidays[holidayKey];
+
+                const isAvailable = availableDates.includes(day);
+                const isSelected = (selectedDateString === dateStr);
+
+                let btnClass = "relative aspect-square rounded-xl flex flex-col items-center justify-center font-bold transition-all duration-200 select-none overflow-hidden ";
+                let onClickAttr = "";
+
+                // 根據狀態設定顏色
+                if (isSelected) {
+                    // 已點選的日期 (假日為紅色，平日為綠松色)
+                    btnClass += holidayName ? "bg-red-600 text-white shadow-md border border-red-600 scale-105" : "bg-clinic-600 text-white shadow-md border border-clinic-600 scale-105";
+                    onClickAttr = "";
+                } else if (isAvailable) {
+                    // 可選但未點選的日期 
+                    btnClass += holidayName ? "bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 cursor-pointer active:scale-95" : "bg-clinic-50 border border-clinic-300 text-clinic-700 hover:bg-clinic-100 cursor-pointer active:scale-95";
+                    onClickAttr = `onclick="selectDate('${dateStr}')"`;
+                } else {
+                    // 無門診的日期 (灰色/淡紅色)
+                    btnClass += holidayName ? "bg-slate-50/50 text-red-300 border border-transparent cursor-not-allowed" : "bg-slate-50/50 text-slate-300 border border-transparent cursor-not-allowed";
+                }
+
+                // 假日標籤 HTML
+                let holidayHtml = '';
+                if (holidayName) {
+                    let textClass = isSelected ? "text-red-100" : (isAvailable ? "text-red-500" : "text-red-300");
+                    holidayHtml = `<span class="absolute bottom-1 w-full text-[9px] sm:text-[10px] leading-tight ${textClass} font-bold truncate px-0.5 text-center">${holidayName}</span>`;
+                }
+
+                // 門診標記 HTML
+                let dotHtml = '';
+                if (isAvailable && !isSelected) {
+                    dotHtml = `<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-clinic-400"></span>`;
+                }
+
+                grid.innerHTML += `
+                    <div class="${btnClass}" ${onClickAttr}>
+                        <span class="text-sm sm:text-base ${holidayName ? 'mb-2.5' : ''}">${day}</span>
+                        ${holidayHtml}
+                        ${dotHtml}
+                    </div>
+                `;
+            }
+        }
+
+        // --- 點擊日期後，顯示當日時段 ---
+        function selectDate(dateStr) {
+            selectedDateString = dateStr;
+            renderCalendar(); // 重新渲染以更新亮色選擇狀態
+
+            // 顯示時段區塊
+            const slotsContainer = document.getElementById('slotsContainer');
+            const dateDisplay = document.getElementById('selectedDateDisplay');
+            const holidayWarning = document.getElementById('holidayWarning');
+            const holidayNameDisplay = document.getElementById('holidayNameDisplay');
+
+            dateDisplay.textContent = dateStr.replace(/-/g, '/');
+            slotsContainer.classList.remove('hidden');
+
+            // 檢查是否為假日，動態顯示警告橫幅
+            const [, month, day] = dateStr.split('-');
+            const holidayName = mockHolidays[`${month}/${day}`];
+            if (holidayName) {
+                holidayNameDisplay.textContent = holidayName;
+                holidayWarning.classList.remove('hidden');
+            } else {
+                holidayWarning.classList.add('hidden');
+            }
+
+            // 滾動畫面至時段區塊
+            setTimeout(() => {
+                slotsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+
+            // 根據科別與日期動態產生假資料卡片
+            generateMockDoctorSlots();
+        }
+
+        function generateMockDoctorSlots() {
+            const dept = document.getElementById('stepDept').value;
+            const morningBox = document.getElementById('slotMorning');
+            const afternoonBox = document.getElementById('slotAfternoon');
+
+            // 清空
+            morningBox.innerHTML = '';
+            afternoonBox.innerHTML = '';
+
+            // 產生卡片樣板函數
+            const createCard = (doctor, desc, current, max) => `
+                <div onclick="openBookingModal('${dept}', '${doctor}', '上午')" class="cursor-pointer border border-clinic-100 bg-clinic-50/50 rounded-xl p-3 sm:p-4 hover:bg-clinic-100 hover:shadow-sm transition-all duration-200 group active:scale-[0.98] mb-3">
+                    <div class="font-bold text-clinic-700 flex justify-between items-center text-sm sm:text-base">
+                        ${doctor} 醫師 <i class="ph ph-caret-right text-clinic-500 opacity-50 group-hover:opacity-100 transition"></i>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">${desc}</div>
+                    <div class="mt-2.5 text-xs flex justify-between items-center pt-2 border-t border-clinic-100/50">
+                        <span class="bg-white px-2 py-0.5 rounded text-slate-600 border border-slate-100 font-medium">已掛號: ${current}/${max}</span>
+                        <span class="${current >= max ? 'text-red-500' : 'text-clinic-600'} font-bold">${current >= max ? '額滿' : '可預約'}</span>
+                    </div>
+                </div>
+            `;
+
+            if (dept === '耳鼻喉科') {
+                morningBox.innerHTML = createCard('王大明', '一般內科、流感篩檢', 12, 40);
+                afternoonBox.innerHTML = createCard('林心如', '一般內科、過敏', 38, 40);
+            } else {
+                morningBox.innerHTML = createCard('李小梅', '一般專科', 5, 30);
+                afternoonBox.innerHTML = `<div class="border border-slate-200 bg-slate-50 rounded-xl p-4 opacity-75 text-center"><div class="font-bold text-slate-500 text-sm">無門診</div></div>`;
+            }
+        }
+
+
+        // --- 掛號 Modal 邏輯 ---
+        function openBookingModal(dept, doctor, time) {
+            const campus = document.getElementById('stepCampus').value;
+            document.getElementById('modalSubtitle').textContent = `${campus} - ${dept} - ${doctor} 醫師 (${time}) - ${selectedDateString}`;
+            document.getElementById('bookingModal').classList.remove('hidden');
+            togglePatientType('new');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            document.getElementById('bookingForm').reset();
+        }
+
+        function togglePatientType(type) {
+            currentPatientType = type;
+            const btnNew = document.getElementById('btn-type-new');
+            const btnReturn = document.getElementById('btn-type-return');
+            const newPatientFields = document.getElementById('newPatientFields');
+            const newPatientBanner = document.getElementById('newPatientBanner');
+
+            if (type === 'new') {
+                btnNew.className = "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md shadow-sm bg-white text-slate-800 transition min-h-[36px]";
+                btnReturn.className = "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 transition min-h-[36px]";
+                newPatientFields.style.display = 'block';
+                newPatientBanner.style.display = 'flex';
+                newPatientFields.querySelectorAll('input').forEach(i => i.setAttribute('required', ''));
+            } else {
+                btnReturn.className = "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md shadow-sm bg-white text-slate-800 transition min-h-[36px]";
+                btnNew.className = "flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 transition min-h-[36px]";
+                newPatientFields.style.display = 'none';
+                newPatientBanner.style.display = 'none';
+                newPatientFields.querySelectorAll('input').forEach(i => i.removeAttribute('required'));
+            }
+        }
+
+        function submitBooking() {
+            closeBookingModal();
+            if (currentPatientType === 'new') {
+                showMessage('掛號成功！', '您的預約號碼為 15 號。\n請撥空填寫「初診資料表」，以加速當日看診流程。', 'success', 'booking_success_new');
+            } else {
+                showMessage('掛號成功！', '您的預約號碼為 15 號。\n請準時前往診所候診，或隨時關注線上進度。', 'success', 'booking_success_return');
+            }
+        }
+
+        function openNewPatientForm() {
+            closeMessage();
+            setTimeout(() => { document.getElementById('newPatientFormModal').classList.remove('hidden'); }, 300);
+        }
+
+        function closeNewPatientForm(isSubmit) {
+            document.getElementById('newPatientFormModal').classList.add('hidden');
+            if (isSubmit) {
+                setTimeout(() => { showMessage('資料已建檔', '您的初診資料已成功送出，感謝您的配合！', 'success', 'default'); }, 300);
+            }
+        }
+
+        // --- 看診進度篩選收合 ---
+        function toggleProgressFilter() {
+            const content = document.getElementById('progressFilterContent');
+            const chevron = document.getElementById('progressFilterChevron');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden'); content.classList.add('grid');
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden'); content.classList.remove('grid');
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // --- 查詢與取消邏輯 ---
+        function mockQuery() {
+            const resultDiv = document.getElementById('queryResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function cancelAppointment() {
+            showMessage('確定要取消嗎？', '取消後若需看診請重新掛號。', 'warning', 'confirm_cancel');
+        }
+
+        function executeCancel() {
+            closeMessage();
+            setTimeout(() => {
+                document.getElementById('queryResult').classList.add('hidden');
+                showMessage('已取消', '您的掛號已成功取消。', 'success', 'default');
+            }, 300);
+        }
+
+        // --- 共用訊息框 ---
+        function showMessage(title, text, type = 'success', mode = 'default') {
+            const modal = document.getElementById('messageModal');
+            const content = document.getElementById('messageModalContent');
+            const icon = document.getElementById('messageIcon');
+            const iconBg = document.getElementById('messageIconBg');
+            const footer = document.getElementById('messageFooter');
+
+            document.getElementById('messageTitle').textContent = title;
+            document.getElementById('messageText').textContent = text;
+
+            if (type === 'success') {
+                icon.className = "ph ph-check text-2xl text-green-600";
+                iconBg.className = "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3";
+            } else if (type === 'warning') {
+                icon.className = "ph ph-warning text-2xl text-yellow-600";
+                iconBg.className = "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-3";
+            }
+
+            if (mode === 'confirm_cancel') {
+                footer.innerHTML = `
+                    <button onclick="closeMessage()" class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg px-4 py-2.5 text-xs sm:text-sm hover:bg-slate-50 transition min-h-[44px] active:scale-[0.98]">保留預約</button>
+                    <button onclick="executeCancel()" class="flex-1 bg-red-600 text-white font-medium rounded-lg px-4 py-2.5 text-xs sm:text-sm hover:bg-red-700 transition shadow-sm min-h-[44px] active:scale-[0.98]">確認取消</button>
+                `;
+            } else if (mode === 'booking_success_new') {
+                footer.innerHTML = `
+                    <button onclick="closeMessage()" class="flex-1 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg py-2 hover:bg-slate-50 transition min-h-[44px] text-xs sm:text-sm">稍後再說</button>
+                    <button onclick="openNewPatientForm()" class="flex-[1.5] bg-clinic-600 text-white font-medium rounded-lg py-2 hover:bg-clinic-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm">填寫初診資料</button>
+                `;
+            } else if (mode === 'booking_success_return') {
+                footer.innerHTML = `
+                    <button onclick="closeMessage()" class="flex-1 bg-slate-800 text-white font-medium rounded-lg py-2 hover:bg-slate-700 transition shadow-sm min-h-[44px] text-xs sm:text-sm">確定</button>
+                `;
+            } else {
+                footer.innerHTML = `<button onclick="closeMessage()" class="w-full bg-slate-800 text-white font-medium rounded-lg px-6 py-2.5 text-sm hover:bg-slate-700 transition shadow-sm min-h-[44px]">確定</button>`;
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+
+        function closeMessage() {
+            const modal = document.getElementById('messageModal');
+            const content = document.getElementById('messageModalContent');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        // 初始化
+        window.onload = function () {
+            renderCalendar();
+        }
+    </script>
+</body>
+
+</html>
